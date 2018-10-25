@@ -5,20 +5,7 @@ var $$Array = require("bs-platform/lib/js/array.js");
 var Block = require("bs-platform/lib/js/block.js");
 var React = require("react");
 var Caml_array = require("bs-platform/lib/js/caml_array.js");
-var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var ReactDOMRe = require("reason-react/src/ReactDOMRe.js");
-
-function formatoJugador(jugador) {
-  if (jugador !== undefined) {
-    if (jugador) {
-      return "O";
-    } else {
-      return "X";
-    }
-  } else {
-    return "";
-  }
-}
 
 function determinarGanador(tablero) {
   console.log(tablero);
@@ -262,13 +249,40 @@ function determinarGanador(tablero) {
   }
 }
 
-function click(pos, partida, _) {
-  var fila = pos / 3 | 0;
-  var columna = pos % 3;
-  return ReactDOMRe.renderToElementWithId(formatoTablero(turno(partida, /* record */[
-                      /* fila */fila,
-                      /* columna */columna
-                    ])), "principal");
+function turno(estadoPartida, indice) {
+  var nuevoEstado;
+  if (typeof estadoPartida === "number") {
+    var tablero = /* array */[
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    ];
+    Caml_array.caml_array_set(tablero, indice, /* Cruz */0);
+    nuevoEstado = /* Iniciada */Block.__(0, [
+        /* Circulo */1,
+        tablero
+      ]);
+  } else if (estadoPartida.tag) {
+    nuevoEstado = /* NoIniciada */0;
+  } else {
+    var jugador = estadoPartida[0];
+    var nuevoTablero = $$Array.copy(estadoPartida[1]);
+    Caml_array.caml_array_set(nuevoTablero, indice, jugador);
+    var nuevoJugador = jugador ? /* Cruz */0 : /* Circulo */1;
+    var ganador = determinarGanador(nuevoTablero);
+    console.log(ganador);
+    nuevoEstado = typeof ganador === "number" || !ganador.tag ? /* Iniciada */Block.__(0, [
+          nuevoJugador,
+          nuevoTablero
+        ]) : ganador;
+  }
+  return ReactDOMRe.renderToElementWithId(formatoTablero(nuevoEstado), "principal");
 }
 
 function formatoTablero(partida) {
@@ -292,64 +306,43 @@ function formatoTablero(partida) {
       undefined
     ];
   }
-  var nuevoTablero = $$Array.map(formatoJugador, tablero);
-  var tableroHtml = $$Array.mapi((function (pos, cadena) {
-          return React.createElement("button", {
-                      id: String(pos),
-                      onClick: (function (param) {
-                          return click(pos, partida, param);
-                        })
-                    }, cadena);
-        }), nuevoTablero);
+  var tableroHtml = $$Array.mapi((function (pos, elem) {
+          return formatoJugador(pos, partida, elem);
+        }), tablero);
   return ReactDOMRe.createElementVariadic("div", {
               className: "tablero"
             }, tableroHtml);
 }
 
-function turno(estadoPartida, jugada) {
-  var indice = Caml_int32.imul(jugada[/* fila */0], 3) + jugada[/* columna */1] | 0;
-  if (typeof estadoPartida === "number") {
-    var tablero = /* array */[
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined
-    ];
-    Caml_array.caml_array_set(tablero, indice, /* Cruz */0);
-    return /* Iniciada */Block.__(0, [
-              /* Circulo */1,
-              tablero
-            ]);
-  } else if (estadoPartida.tag) {
-    return /* NoIniciada */0;
-  } else {
-    var jugador = estadoPartida[0];
-    var nuevoTablero = $$Array.copy(estadoPartida[1]);
-    Caml_array.caml_array_set(nuevoTablero, indice, jugador);
-    var nuevoJugador = jugador ? /* Cruz */0 : /* Circulo */1;
-    var ganador = determinarGanador(nuevoTablero);
-    console.log(ganador);
-    if (typeof ganador === "number" || !ganador.tag) {
-      return /* Iniciada */Block.__(0, [
-                nuevoJugador,
-                nuevoTablero
-              ]);
+function formatoJugador(pos, partida, jugador) {
+  if (jugador !== undefined) {
+    if (jugador) {
+      return React.createElement("button", {
+                  disabled: true
+                }, "O");
     } else {
-      return ganador;
+      return React.createElement("button", {
+                  disabled: true
+                }, "X");
     }
+  } else {
+    return React.createElement("button", {
+                onClick: (function () {
+                    return turno(partida, pos);
+                  })
+              }, "");
   }
+}
+
+function click(pos, partida, _) {
+  return turno(partida, pos);
 }
 
 ReactDOMRe.renderToElementWithId(formatoTablero(/* NoIniciada */0), "principal");
 
-exports.formatoJugador = formatoJugador;
 exports.determinarGanador = determinarGanador;
 exports.click = click;
+exports.formatoJugador = formatoJugador;
 exports.formatoTablero = formatoTablero;
 exports.turno = turno;
 /*  Not a pure module */

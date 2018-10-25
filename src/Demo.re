@@ -9,17 +9,7 @@ type estadosPartida =
 | Iniciada (jugador, tablero)
 | Terminada (option(jugador))
 
-type jugada = {
-    fila:int,
-    columna: int
-}
-
-let formatoJugador  = (jugador) =>
-    switch(jugador) {
-        |None => ""
-        |Some Cruz => "X"
-        |Some Circulo => "O"
-    }
+type jugada = int
 
 let determinarGanador  = (tablero) =>{
     Js.log(tablero);
@@ -65,11 +55,14 @@ let determinarGanador  = (tablero) =>{
     }
 }
 
-let rec click = (pos, partida, _) => {
-    let fila = pos / 3;
-    let columna = pos mod 3;
-    ReactDOMRe.renderToElementWithId(formatoTablero(turno (partida, {fila, columna})), "principal")
-}
+let rec click = (pos, partida, _) => turno (partida, pos)
+
+and formatoJugador  = (pos, partida, jugador) =>
+    switch (jugador) {
+        | None => <button onClick={click(pos, partida)}> {ReasonReact.string("")} </button>
+        | Some (Cruz) => <button disabled=true > {ReasonReact.string("X")} </button>
+        | Some (Circulo) => <button disabled=true> {ReasonReact.string("O")} </button>
+    }
 
 and formatoTablero = (partida) => {
     let tablero = switch (partida) {
@@ -78,13 +71,12 @@ and formatoTablero = (partida) => {
                 None,None,None,
                 None,None,None|];
     }
-    let nuevoTablero =  Array.map (formatoJugador, tablero);
-    let tableroHtml = Array.mapi ((pos, cadena) =>  <button id={string_of_int (pos)} onClick = {click(pos, partida)}>{ReasonReact.string(cadena)} </button> , nuevoTablero);
+    let tableroHtml =  Array.mapi ((pos, elem) => formatoJugador (pos, partida, elem) , tablero);
     <div className="tablero">...tableroHtml  </div>
 }
 
-and turno = (estadoPartida, jugada) =>{
-    let indice = jugada.fila * 3 + jugada.columna;
+and turno = (estadoPartida, indice) =>{
+    let nuevoEstado = 
     switch (estadoPartida) {
         | NoIniciada => {
             let tablero = [|None,None,None,
@@ -110,6 +102,7 @@ and turno = (estadoPartida, jugada) =>{
         }
         | Terminada (_) => NoIniciada
     }
+    ReactDOMRe.renderToElementWithId(formatoTablero(nuevoEstado), "principal")
 }
 
 ReactDOMRe.renderToElementWithId(formatoTablero(NoIniciada), "principal")
